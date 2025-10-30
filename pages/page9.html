@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Brick Breaker - Game Playground</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.3/lib/p5.min.js"></script>
+  </head>
+  <body
+    class="bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 min-h-screen flex flex-col items-center justify-center text-white"
+  >
+    <div class="container mx-auto px-4 py-16">
+      <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4 text-red-400 text-center">
+          🧱 Brick Breaker
+        </h1>
+
+        <!-- Game Controls -->
+        <div class="flex gap-4 justify-center mb-4">
+          <button
+            id="startBtn"
+            class="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded font-semibold"
+          >
+            ▶️ Start Game
+          </button>
+          <button
+            id="pauseBtn"
+            class="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 rounded font-semibold"
+          >
+            ⏸️ Pause
+          </button>
+        </div>
+
+        <!-- Game Info -->
+        <div class="flex gap-6 justify-center mb-4 text-lg">
+          <div id="score" class="text-yellow-300 font-semibold">Score: 0</div>
+          <div id="lives" class="text-red-300 font-semibold">Lives: 3</div>
+          <div id="level" class="text-purple-300 font-semibold">Level: 1</div>
+        </div>
+
+        <div
+          id="canvasContainer"
+          class="border-4 border-gray-700 rounded-lg shadow-lg overflow-hidden"
+        ></div>
+
+        <div id="status" class="mt-4 text-xl text-yellow-400 text-center"></div>
+        <div class="mt-4 text-sm text-gray-400 text-center">
+          Move your mouse or use arrow keys to control the paddle
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex justify-center mt-6">
+          <a
+            href="../index.html"
+            class="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-semibold rounded-lg shadow-lg hover:bg-orange-700 transition-all duration-300 hover:scale-105"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              ></path>
+            </svg>
+            Back to Homepage
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/brickBreaker.js"></script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "game-playground",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build:css": "node_modules/.bin/tailwindcss -i ./css/input.css -o ./dist/output.css",
+    "watch:css": "node_modules/.bin/tailwindcss -i ./css/input.css -o ./dist/output.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.16"
+  }
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spot the Difference - Enhanced Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.3/lib/p5.min.js"></script>
+    <style>
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      @keyframes glow {
+        0%,
+        100% {
+          box-shadow: 0 0 5px rgba(255, 223, 0, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 20px rgba(255, 223, 0, 0.8);
+        }
+      }
+
+      .pulse-animation {
+        animation: pulse 2s infinite;
+      }
+
+      .glow-animation {
+        animation: glow 2s infinite;
+      }
+
+      #canvasContainer {
+        cursor: crosshair;
+        position: relative;
+      }
+
+      .game-stat {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 0, 0, 0.8) 0%,
+          rgba(0, 0, 0, 0.6) 100%
+        );
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .hint-button:not(:disabled):hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(255, 223, 0, 0.6);
+      }
+
+      .hint-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 min-h-screen flex flex-col items-center justify-center text-white"
+  >
+    <div class="container mx-auto px-4 py-8">
+      <div class="max-w-5xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-teal-400 text-center">
+          🔍 Spot the Difference
+        </h1>
+
+        <!-- Game Stats Bar -->
+        <div class="flex flex-wrap justify-center gap-4 mb-6">
+          <div class="game-stat px-4 py-2 rounded-lg">
+            <span id="level" class="text-lg font-bold text-cyan-400"
+              >Level 1</span
+            >
+          </div>
+          <div class="game-stat px-4 py-2 rounded-lg">
+            <span id="timer" class="text-lg font-bold text-emerald-400"
+              >⏰ 90s</span
+            >
+          </div>
+          <div class="game-stat px-4 py-2 rounded-lg">
+            <span id="score" class="text-lg font-bold text-yellow-400"
+              >Score: 0</span
+            >
+          </div>
+          <div class="game-stat px-4 py-2 rounded-lg">
+            <span id="hints" class="text-lg font-bold text-pink-400"
+              >💡 Hints: 3</span
+            >
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="flex justify-center mb-6">
+          <div
+            id="canvasContainer"
+            class="border-4 border-purple-700 rounded-xl shadow-2xl overflow-hidden"
+          ></div>
+        </div>
+
+        <!-- Status Message -->
+        <div id="status" class="mt-4 text-xl text-center min-h-[2rem]"></div>
+
+        <!-- Game Controls -->
+        <div class="flex justify-center gap-4 mt-6">
+          <button
+            id="hintBtn"
+            class="hint-button px-6 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 text-white font-semibold rounded-lg shadow-lg hover:from-yellow-600 hover:to-amber-700 transition-all duration-300"
+            onclick="useHint()"
+          >
+            💡 Use Hint (-200 pts)
+          </button>
+
+          <button
+            id="restartBtn"
+            class="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold rounded-lg shadow-lg hover:from-red-600 hover:to-pink-700 transition-all duration-300 hover:scale-105"
+            onclick="restartGame()"
+          >
+            🔄 Restart Game
+          </button>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex justify-center mt-8">
+          <a
+            href="../index.html"
+            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 hover:scale-105"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              ></path>
+            </svg>
+            Back to Homepage
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/spotDifference.js"></script>
+  </body>
+</html>
