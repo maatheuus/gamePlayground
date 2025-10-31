@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FloodFill Painter - Game Playground</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tinycolor2@1.6.0/dist/tinycolor-min.js"></script>
+    <style>
+      @keyframes fillPulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+      .filling {
+        animation: fillPulse 0.3s ease-in-out;
+      }
+      .spinner {
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid #06b6d4;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .color-swatch {
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .color-swatch:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      }
+      .color-swatch.active {
+        border: 3px solid white !important;
+        transform: scale(1.15);
+      }
+      #canvas {
+        image-rendering: auto;
+        image-rendering: smooth;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 min-h-screen flex flex-col items-center justify-center text-white"
+  >
+    <div class="container mx-auto px-4 py-8">
+      <div class="max-w-6xl mx-auto">
+        <!-- Title -->
+        <h1 class="text-4xl font-bold mb-2 text-cyan-400 text-center">
+          🎨 FloodFill Painter
+        </h1>
+        <p class="text-center text-gray-400 mb-6">
+          Transform photos into colorful artwork with the paint bucket tool!
+        </p>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <!-- Left Controls Panel -->
+          <div class="lg:col-span-1 space-y-4">
+            <!-- Image Controls -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <h3 class="text-lg font-semibold text-cyan-400 mb-3">📷 Image</h3>
+
+              <button
+                data-source="elfoWithGift"
+                aria-label="Load sample coloring page"
+                class="sampleBtn w-full px-4 py-2 bg-pink-600 hover:bg-pink-500 rounded-md font-semibold transition mb-2"
+              >
+                🧝‍♀️🎁 Christmas Elf with Gift
+              </button>
+              <button
+                data-source="elfo"
+                aria-label="Load sample coloring page"
+                class="sampleBtn w-full px-4 py-2 bg-pink-600 hover:bg-pink-500 rounded-md font-semibold transition mb-2"
+              >
+                🧙‍♀️ Christmas Elf
+              </button>
+              <button
+                data-source="dinassoure"
+                aria-label="Load sample coloring page"
+                class="sampleBtn w-full px-4 py-2 bg-pink-600 hover:bg-pink-500 rounded-md font-semibold transition mb-2"
+              >
+                🦖 Dinassoure
+              </button>
+              <button
+                data-source="radio"
+                aria-label="Load sample coloring page"
+                class="sampleBtn w-full px-4 py-2 bg-pink-600 hover:bg-pink-500 rounded-md font-semibold transition mb-2"
+              >
+                📻 Radio
+              </button>
+            </div>
+
+            <!-- Color Controls -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <h3 class="text-lg font-semibold text-cyan-400 mb-3">🎨 Color</h3>
+
+              <!-- Color Picker -->
+              <div class="flex items-center gap-2 mb-3">
+                <input
+                  type="color"
+                  id="colorPicker"
+                  value="#FF5733"
+                  aria-label="Choose fill color"
+                  class="w-12 h-12 rounded cursor-pointer border-2 border-gray-600"
+                />
+                <div class="flex-1">
+                  <input
+                    type="text"
+                    id="colorHex"
+                    value="#FF5733"
+                    maxlength="7"
+                    aria-label="Color hex value"
+                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white font-mono text-sm focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <!-- Color Palette -->
+              <div class="grid grid-cols-4 gap-2">
+                <div
+                  class="color-swatch active w-full h-10 rounded border-2 border-gray-600"
+                  data-color="#FF5733"
+                  style="background-color: #ff5733"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Red color"
+                ></div>
+                <div
+                  class="color-swatch w-full h-10 rounded border-2 border-gray-600"
+                  data-color="#FFA500"
+                  style="background-color: #ffa500"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Orange color"
+                ></div>
+                <div
+                  class="color-swatch w-full h-10 rounded border-2 border-gray-600"
+                  data-color="#FFD700"
+                  style="background-color: #ffd700"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Yellow color"
+                ></div>
+                <div
+                  class="color-swatch w-full h-10 rounded border-2 border-gray-600"
+                  data-color="#32CD32"
+                  style="background-color: #32cd32"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Green color"
+                ></div>
+                <div
+                  class="color-swatch w-full h-10 rounded border-2 border-gray-600"
+                  data-color="#06B6D4"
+                  style="background-color: #06b6d4"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Cyan color"
+                ></div>
+                <div
+                  class="color-swatch w-full h-10 rounded border-2 border-gray-600"
+                  data-color="#4169E1"
+                  style="background-color: #4169e1"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Blue color"
+                ></div>
+                <div
+                  class="color-swatch w-full h-10 rounded border-2 border-gray-600"
+                  data-color="#9333EA"
+                  style="background-color: #9333ea"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Purple color"
+                ></div>
+                <div
+                  class="color-swatch w-full h-10 rounded border-2 border-gray-600"
+                  data-color="#EC4899"
+                  style="background-color: #ec4899"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Pink color"
+                ></div>
+              </div>
+            </div>
+
+            <!-- Tool Settings -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <h3 class="text-lg font-semibold text-cyan-400 mb-3">
+                ⚙️ Settings
+              </h3>
+
+              <!-- Tolerance Slider -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                  Fill Tolerance:
+                  <span id="toleranceValue" class="text-cyan-400">32</span>
+                </label>
+                <input
+                  type="range"
+                  id="toleranceSlider"
+                  min="0"
+                  max="255"
+                  value="32"
+                  aria-label="Adjust fill tolerance"
+                  class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                />
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>Precise</span>
+                  <span>Loose</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <h3 class="text-lg font-semibold text-cyan-400 mb-3">
+                🎬 Actions
+              </h3>
+
+              <div class="flex gap-2 mb-2">
+                <button
+                  id="undoBtn"
+                  aria-label="Undo last action (Ctrl+Z)"
+                  disabled
+                  class="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-md font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ↶ Undo
+                </button>
+                <button
+                  id="redoBtn"
+                  aria-label="Redo last undone action (Shift+Ctrl+Z)"
+                  disabled
+                  class="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-md font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ↷ Redo
+                </button>
+              </div>
+
+              <button
+                id="clearBtn"
+                aria-label="Clear all colors and reset to black and white"
+                class="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md font-semibold transition mb-2"
+              >
+                🔄 Reset Drawing
+              </button>
+
+              <button
+                id="saveBtn"
+                aria-label="Save artwork as PNG image"
+                class="w-full px-4 py-2 bg-green-600 hover:bg-green-500 rounded-md font-semibold transition"
+              >
+                💾 Save PNG
+              </button>
+            </div>
+          </div>
+
+          <!-- Canvas Area -->
+          <div class="lg:col-span-3">
+            <!-- Status Message -->
+            <div id="statusContainer" class="mb-4 hidden">
+              <div
+                id="status"
+                role="alert"
+                aria-live="polite"
+                class="px-4 py-3 rounded-lg text-center font-semibold"
+              ></div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div
+              id="canvasContainer"
+              class="border-4 border-gray-700 rounded-lg shadow-2xl overflow-hidden bg-gray-900 relative min-h-[600px] flex items-center justify-center"
+            >
+              <!-- Initial Message / Loading Spinner -->
+              <div
+                id="loadingContainer"
+                class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10"
+              >
+                <div id="initialMessage" class="text-center">
+                  <div class="text-6xl mb-4">👈</div>
+                  <p class="text-xl text-gray-300 font-semibold">
+                    Select an image on the left
+                  </p>
+                  <p class="text-sm text-gray-500 mt-2">
+                    Choose Christmas Elf or load a random photo
+                  </p>
+                </div>
+                <div id="loadingSpinner" class="hidden flex-col items-center">
+                  <div class="spinner"></div>
+                  <p class="mt-4 text-gray-400">Loading image...</p>
+                </div>
+              </div>
+
+              <!-- Canvas -->
+              <canvas
+                id="canvas"
+                class="cursor-crosshair block mx-auto max-w-full h-auto"
+                role="img"
+                aria-label="Painting canvas"
+                style="display: none"
+              >
+              </canvas>
+
+              <!-- Error Placeholder (hidden by default) -->
+              <div
+                id="placeholder"
+                class="hidden flex-col items-center justify-center py-32"
+              >
+                <div class="text-6xl mb-4">⚠️</div>
+                <p class="text-xl text-gray-400 text-center px-4">
+                  Failed to load image. Please try another one.
+                </p>
+              </div>
+            </div>
+
+            <!-- Instructions -->
+            <!-- <div class="mt-4 bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <h3 class="text-lg font-semibold text-cyan-400 mb-2">
+                💡 How to Play
+              </h3>
+              <ul class="text-sm text-gray-300 space-y-1">
+                <li>
+                  • Click/tap on a region to fill it with your selected color
+                </li>
+                <li>
+                  • Use <strong>tolerance</strong> to control how similar pixels
+                  are filled
+                </li>
+                <li>
+                  • Adjust <strong>threshold</strong> to change the black &
+                  white conversion
+                </li>
+                <li>
+                  • Use <strong>Undo (Ctrl+Z)</strong> and
+                  <strong>Redo (Shift+Ctrl+Z)</strong> to fix mistakes
+                </li>
+                <li>• Save your masterpiece as a PNG when finished!</li>
+              </ul>
+            </div> -->
+          </div>
+        </div>
+
+        <!-- Back to Homepage -->
+        <div class="flex justify-center mt-8">
+          <a
+            href="../index.html"
+            class="inline-flex items-center px-6 py-3 bg-cyan-600 text-white font-semibold rounded-lg shadow-lg hover:bg-cyan-700 transition-all duration-300 hover:scale-105"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              ></path>
+            </svg>
+            Back to Homepage
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/floodFillGame.js"></script>
+  </body>
+</html>
