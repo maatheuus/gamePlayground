@@ -16,6 +16,10 @@ let wrongClicks = [];
 let combo = 0;
 let particles = [];
 
+// Image-based levels
+let robotLeftImg;
+let robotRightImg;
+
 // Canvas settings
 const canvasWidth = 800;
 const canvasHeight = 400;
@@ -69,6 +73,12 @@ class Particle {
   isDead() {
     return this.lifespan <= 0;
   }
+}
+
+// Preload images before setup
+function preload() {
+  robotLeftImg = loadImage("../assets/spotDifference/leftImage.png");
+  robotRightImg = loadImage("../assets/spotDifference/rightImage.png");
 }
 
 function setup() {
@@ -391,20 +401,23 @@ function generateLevel(level) {
 
   // Different scenes based on level
   switch (level) {
+    // case 1:
+    //   generateScene1();
+    //   break;
+    // case 2:
+    //   generateScene2();
+    //   break;
+    // case 3:
+    //   generateScene3();
+    //   break;
+    // case 4:
+    //   generateScene4();
+    //   break;
+    // case 5:
+    //   generateScene5();
+    //   break;
     case 1:
-      generateScene1();
-      break;
-    case 2:
-      generateScene2();
-      break;
-    case 3:
-      generateScene3();
-      break;
-    case 4:
-      generateScene4();
-      break;
-    case 5:
-      generateScene5();
+      generateRobotScene();
       break;
     default:
       generateScene1();
@@ -582,6 +595,23 @@ function generateScene5() {
   differences.push({ x: 357 + imageWidth, y: 212, radius: 15 }); // 8. Panel
   differences.push({ x: 100 + imageWidth, y: 300, radius: 12 }); // 9. Crater
   differences.push({ x: 370 + imageWidth, y: 40, radius: 10 }); // 10. Star
+}
+
+function generateRobotScene() {
+  // Level 6: Robot Difference (Image-based level with separate images)
+  // Display the loaded robot images
+  leftImg.image(robotLeftImg, 0, 0, imageWidth, canvasHeight);
+  rightImg.image(robotRightImg, 0, 0, imageWidth, canvasHeight);
+
+  // Define differences based on the actual robot images
+  // leftImage.png has: "PAINTER" text, winking face, colored belly buttons, green left arm, red right arm
+  // rightImage.png has: "MEGGY" text, both eyes open, "OK" on belly, red left arm, red right arm
+
+  // Coordinates are for the RIGHT canvas (add imageWidth)
+  differences.push({ x: 300 + imageWidth, y: 50, radius: 30 }); // 1. Top display text (PAINTER vs MEGGY)
+  differences.push({ x: 160 + imageWidth, y: 100, radius: 20 }); // 2. Robot face expression (wink vs open)
+  differences.push({ x: 195 + imageWidth, y: 200, radius: 35 }); // 3. Belly screen (colored buttons vs OK)
+  differences.push({ x: 115 + imageWidth, y: 175, radius: 25 }); // 4. Left arm color (green vs red)
 }
 
 // --- REFACTORED SCENE DRAWING FUNCTIONS ---

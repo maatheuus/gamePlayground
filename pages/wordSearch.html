@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Search - Game Playground</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      .grid-cell {
+        width: 100%;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: bold;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s;
+        margin: 0 auto;
+        aspect-ratio: 1/1;
+      }
+
+      .grid-cell:hover {
+        background-color: rgba(6, 182, 212, 0.2);
+      }
+
+      .grid-cell.selected {
+        background-color: rgba(6, 182, 212, 0.5);
+      }
+
+      .grid-cell.found {
+        background-color: rgba(34, 197, 94, 0.6);
+        color: white;
+      }
+
+      .word-item {
+        transition: all 0.3s;
+      }
+
+      .word-item.found {
+        text-decoration: line-through;
+        opacity: 0.5;
+      }
+
+      @keyframes celebrate {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+      }
+
+      .celebrate {
+        animation: celebrate 0.5s ease-in-out;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 min-h-screen flex flex-col items-center justify-center text-white"
+  >
+    <div class="container mx-auto px-4 py-8">
+      <div class="max-w-6xl mx-auto">
+        <!-- Title -->
+        <h1 class="text-4xl font-bold mb-2 text-teal-400 text-center">
+          🔤 Word Search
+        </h1>
+        <p class="text-center text-gray-400 mb-6">
+          Find all the hidden words in the grid!
+        </p>
+
+        <!-- Game Stats -->
+        <div class="flex flex-wrap justify-center gap-4 mb-6">
+          <div class="px-4 py-2 bg-gray-800 rounded-lg border border-gray-700">
+            <span id="timer" class="text-lg font-bold text-cyan-400"
+              >⏰ 0:00</span
+            >
+          </div>
+          <div class="px-4 py-2 bg-gray-800 rounded-lg border border-gray-700">
+            <span id="score" class="text-lg font-bold text-green-400"
+              >Found: 0/0</span
+            >
+          </div>
+          <div class="px-4 py-2 bg-gray-800 rounded-lg border border-gray-700">
+            <select
+              id="difficulty"
+              class="bg-gray-700 text-white px-3 py-1 rounded font-semibold cursor-pointer"
+            >
+              <option value="easy" selected>Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <!-- Words List Panel -->
+          <div class="lg:col-span-1">
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <h3 class="text-lg font-semibold text-teal-400 mb-3">
+                📝 Words to Find
+              </h3>
+              <ul id="wordList" class="space-y-2 text-gray-300"></ul>
+            </div>
+
+            <!-- Controls -->
+            <div class="mt-4 bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <button
+                id="newGameBtn"
+                class="w-full px-4 py-2 bg-teal-600 hover:bg-teal-500 rounded-md font-semibold transition mb-2"
+              >
+                🔄 New Game
+              </button>
+              <button
+                id="hintBtn"
+                class="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-500 rounded-md font-semibold transition"
+              >
+                💡 Show Hint
+              </button>
+            </div>
+
+            <!-- Instructions -->
+            <!-- <div class="mt-4 bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <h3 class="text-sm font-semibold text-teal-400 mb-2">
+                📖 How to Play
+              </h3>
+              <ul class="text-xs text-gray-400 space-y-1">
+                <li>• Click and drag to select letters</li>
+                <li>• Words can be horizontal, vertical, or diagonal</li>
+                <li>• Can be forwards or backwards</li>
+                <li>• Find all words to win!</li>
+              </ul>
+            </div> -->
+          </div>
+
+          <!-- Game Grid -->
+          <div class="lg:col-span-3">
+            <!-- Grid Container -->
+            <div
+              class="bg-gray-800 rounded-lg p-2 md:p-6 border-4 border-gray-700 shadow-2xl"
+            >
+              <div
+                id="gridContainer"
+                class="inline-block justify-center mx-auto gap-2 md:gap-3"
+                style="display: grid"
+              ></div>
+            </div>
+
+            <!-- Status Message -->
+            <div id="statusContainer" class="mt-6">
+              <div
+                id="status"
+                role="alert"
+                aria-live="polite"
+                class="px-4 py-3 rounded-lg text-center font-semibold"
+              ></div>
+            </div>
+
+            <div class="mt-4 flex flex-col gap-y-2">
+              <audio
+                id="sdn-success"
+                src="../assets/wordSearch/audio/success.wav"
+                type="audio/wav"
+                preload="auto"
+              ></audio>
+              <audio
+                id="sdn-fail"
+                src="../assets/wordSearch/audio/fail.wav"
+                type="audio/wav"
+                preload="auto"
+              ></audio>
+            </div>
+          </div>
+        </div>
+
+        <!-- Back to Homepage -->
+        <div class="flex justify-center mt-8">
+          <a
+            href="../index.html"
+            class="inline-flex items-center px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg shadow-lg hover:bg-teal-700 transition-all duration-300 hover:scale-105"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              ></path>
+            </svg>
+            Back to Homepage
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/wordSearch.js"></script>
+  </body>
+</html>
