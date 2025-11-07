@@ -23,6 +23,12 @@ let lastPanY = 0;
 let minZoom = 0.1;
 let maxZoom = 10.0;
 
+// Touch gesture state
+let lastTouchDist = 0;
+let lastTouchMidpoint = { x: 0, y: 0 };
+let lastTapTime = 0;
+let doubleTapThreshold = 300; // milliseconds
+
 let colorPicker, sizeSlider, sizeDisplay, eraserBtn, clearBtn, saveBtn;
 let undoBtn, redoBtn, symmetryBtn, replayBtn;
 let zoomInBtn, zoomOutBtn, zoomResetBtn, zoomDisplay;
@@ -248,17 +254,103 @@ function mouseReleased() {
 }
 
 function touchStarted() {
-  if (touches && touches.length > 0) {
-    const t = touches[0];
-    if (pointerInsideCanvas(t.x, t.y)) {
-      const canvasCoords = screenToCanvas(t.x, t.y);
-      startStroke(canvasCoords.x, canvasCoords.y);
+  if (!touches || touches.length === 0) return;
+
+  // Two-finger gesture (pinch-to-zoom or pan)
+  if (touches.length === 2) {
+    const t1 = touches[0];
+    const t2 = touches[1];
+
+    // Calculate initial distance and midpoint
+    lastTouchDist = dist(t1.x, t1.y, t2.x, t2.y);
+    lastTouchMidpoint = {
+      x: (t1.x + t2.x) / 2,
+      y: (t1.y + t2.y) / 2,
+    };
+
+    // End any current drawing
+    if (isDrawing) endStroke();
+    return false;
+  }
+
+  // Single touch - check for double-tap or draw
+  const t = touches[0];
+  if (pointerInsideCanvas(t.x, t.y)) {
+    const currentTime = millis();
+    const timeSinceLastTap = currentTime - lastTapTime;
+
+    // Double-tap detection
+    if (timeSinceLastTap < doubleTapThreshold) {
+      // Double-tap: zoom in on tap location
+      const beforeZoomX = (t.x - panX) / zoomLevel;
+      const beforeZoomY = (t.y - panY) / zoomLevel;
+
+      zoomLevel = constrain(zoomLevel * 2, minZoom, maxZoom);
+
+      panX = t.x - beforeZoomX * zoomLevel;
+      panY = t.y - beforeZoomY * zoomLevel;
+
+      updateZoomDisplay();
+      lastTapTime = 0; // Reset to prevent triple-tap
       return false;
     }
+
+    lastTapTime = currentTime;
+
+    // Start drawing
+    const canvasCoords = screenToCanvas(t.x, t.y);
+    startStroke(canvasCoords.x, canvasCoords.y);
+    return false;
   }
 }
 function touchMoved() {
-  if (touches && touches.length > 0 && isDrawing) {
+  if (!touches || touches.length === 0) return;
+
+  // Two-finger gesture: pinch-to-zoom and pan
+  if (touches.length === 2) {
+    const t1 = touches[0];
+    const t2 = touches[1];
+
+    // Calculate current distance and midpoint
+    const currentDist = dist(t1.x, t1.y, t2.x, t2.y);
+    const currentMidpoint = {
+      x: (t1.x + t2.x) / 2,
+      y: (t1.y + t2.y) / 2,
+    };
+
+    if (lastTouchDist > 0) {
+      // Pinch-to-zoom: calculate zoom based on distance change
+      const zoomFactor = currentDist / lastTouchDist;
+
+      // Get midpoint position before zoom
+      const midBeforeZoomX = (lastTouchMidpoint.x - panX) / zoomLevel;
+      const midBeforeZoomY = (lastTouchMidpoint.y - panY) / zoomLevel;
+
+      // Apply zoom
+      zoomLevel = constrain(zoomLevel * zoomFactor, minZoom, maxZoom);
+
+      // Calculate new pan to keep midpoint fixed
+      panX = lastTouchMidpoint.x - midBeforeZoomX * zoomLevel;
+      panY = lastTouchMidpoint.y - midBeforeZoomY * zoomLevel;
+
+      // Apply additional pan from midpoint movement
+      const midDeltaX = currentMidpoint.x - lastTouchMidpoint.x;
+      const midDeltaY = currentMidpoint.y - lastTouchMidpoint.y;
+      panX += midDeltaX;
+      panY += midDeltaY;
+
+      updateZoomDisplay();
+    }
+
+    // Update last values
+    lastTouchDist = currentDist;
+    lastTouchMidpoint = currentMidpoint;
+
+    return false;
+  }
+
+  // Single touch: continue drawing
+  if (isDrawing && touches.length === 1) {
     const t = touches[0];
     const canvasCoords = screenToCanvas(t.x, t.y);
     extendStroke(canvasCoords.x, canvasCoords.y);
@@ -266,6 +358,12 @@ function touchMoved() {
   }
 }
 function touchEnded() {
+  // Reset touch gesture state
+  if (!touches || touches.length < 2) {
+    lastTouchDist = 0;
+  }
+
+  // End drawing if active
   if (isDrawing) endStroke();
 }
 
