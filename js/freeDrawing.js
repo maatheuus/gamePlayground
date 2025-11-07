@@ -13,8 +13,19 @@ let redoStack = [];
 let currentStroke = null;
 let isDrawing = false;
 
+// Zoom and Pan state
+let zoomLevel = 1.0;
+let panX = 0;
+let panY = 0;
+let isPanning = false;
+let lastPanX = 0;
+let lastPanY = 0;
+let minZoom = 0.1;
+let maxZoom = 10.0;
+
 let colorPicker, sizeSlider, sizeDisplay, eraserBtn, clearBtn, saveBtn;
 let undoBtn, redoBtn, symmetryBtn, replayBtn;
+let zoomInBtn, zoomOutBtn, zoomResetBtn, zoomDisplay;
 
 function setup() {
   let canvas = createCanvas(canvasWidth, canvasHeight);
@@ -95,26 +106,69 @@ function setup() {
     replayBtn.addEventListener("click", replayDrawing);
   }
 
+  // Setup zoom controls
+  zoomInBtn = document.getElementById("zoomInBtn");
+  zoomOutBtn = document.getElementById("zoomOutBtn");
+  zoomResetBtn = document.getElementById("zoomResetBtn");
+  zoomDisplay = document.getElementById("zoomDisplay");
+
+  if (zoomInBtn) {
+    zoomInBtn.addEventListener("click", () => zoomBy(1.2));
+  }
+
+  if (zoomOutBtn) {
+    zoomOutBtn.addEventListener("click", () => zoomBy(0.8));
+  }
+
+  if (zoomResetBtn) {
+    zoomResetBtn.addEventListener("click", resetZoom);
+  }
+
   window.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
       e.preventDefault();
       if (e.shiftKey) redo();
       else undo();
     }
+    // Space key for pan mode
+    if (e.code === "Space" && !isDrawing) {
+      e.preventDefault();
+      cursor(MOVE);
+    }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    if (e.code === "Space") {
+      updateCursor();
+    }
   });
 
   if (sizeDisplay) sizeDisplay.textContent = `Size: ${brushSize}px`;
 
   updateCursor();
+  updateZoomDisplay();
 }
 
 function draw() {
   background(255);
+
+  // Apply zoom and pan transformations
+  push();
+  translate(panX, panY);
+  scale(zoomLevel);
   image(canvasGraphics, 0, 0);
+  pop();
 }
 
 function pointerInsideCanvas(px, py) {
   return px >= 0 && px <= width && py >= 0 && py <= height;
+}
+
+// Transform screen coordinates to canvas coordinates
+function screenToCanvas(screenX, screenY) {
+  const canvasX = (screenX - panX) / zoomLevel;
+  const canvasY = (screenY - panY) / zoomLevel;
+  return { x: canvasX, y: canvasY };
 }
 
 function startStroke(x, y) {
@@ -148,18 +202,48 @@ function endStroke() {
 
 function mousePressed() {
   if (pointerInsideCanvas(mouseX, mouseY)) {
-    startStroke(mouseX, mouseY);
+    // Middle mouse button (button 1) or space key for panning
+    if (mouseButton === CENTER || keyIsDown(32)) {
+      isPanning = true;
+      lastPanX = mouseX;
+      lastPanY = mouseY;
+      cursor(MOVE);
+      return;
+    }
+
+    // Transform coordinates for drawing
+    const canvasCoords = screenToCanvas(mouseX, mouseY);
+    startStroke(canvasCoords.x, canvasCoords.y);
   }
 }
 
 function mouseDragged() {
+  // Handle panning
+  if (isPanning) {
+    const dx = mouseX - lastPanX;
+    const dy = mouseY - lastPanY;
+    panX += dx;
+    panY += dy;
+    lastPanX = mouseX;
+    lastPanY = mouseY;
+    return;
+  }
+
+  // Handle drawing
   if (!isDrawing) return;
   if (!pointerInsideCanvas(mouseX, mouseY)) {
     return;
   }
-  extendStroke(mouseX, mouseY);
+
+  const canvasCoords = screenToCanvas(mouseX, mouseY);
+  extendStroke(canvasCoords.x, canvasCoords.y);
 }
 function mouseReleased() {
+  if (isPanning) {
+    isPanning = false;
+    updateCursor();
+    return;
+  }
   if (isDrawing) endStroke();
 }
 
@@ -167,7 +251,8 @@ function touchStarted() {
   if (touches && touches.length > 0) {
     const t = touches[0];
     if (pointerInsideCanvas(t.x, t.y)) {
-      startStroke(t.x, t.y);
+      const canvasCoords = screenToCanvas(t.x, t.y);
+      startStroke(canvasCoords.x, canvasCoords.y);
       return false;
     }
   }
@@ -175,12 +260,39 @@ function touchStarted() {
 function touchMoved() {
   if (touches && touches.length > 0 && isDrawing) {
     const t = touches[0];
-    extendStroke(t.x, t.y);
+    const canvasCoords = screenToCanvas(t.x, t.y);
+    extendStroke(canvasCoords.x, canvasCoords.y);
     return false;
   }
 }
 function touchEnded() {
   if (isDrawing) endStroke();
+}
+
+// Mouse wheel zoom handler
+function mouseWheel(event) {
+  if (!pointerInsideCanvas(mouseX, mouseY)) return;
+
+  // Prevent page scrolling
+  event.preventDefault();
+
+  // Calculate zoom factor based on scroll direction
+  const zoomFactor = event.delta > 0 ? 0.9 : 1.1;
+
+  // Get mouse position before zoom
+  const mouseBeforeZoomX = (mouseX - panX) / zoomLevel;
+  const mouseBeforeZoomY = (mouseY - panY) / zoomLevel;
+
+  // Apply zoom
+  zoomLevel = constrain(zoomLevel * zoomFactor, minZoom, maxZoom);
+
+  // Adjust pan to keep mouse position fixed
+  panX = mouseX - mouseBeforeZoomX * zoomLevel;
+  panY = mouseY - mouseBeforeZoomY * zoomLevel;
+
+  updateZoomDisplay();
+
+  return false;
 }
 
 function drawStrokeSegment(g, strokeObj, startIndex) {
@@ -282,6 +394,38 @@ function updateCursor() {
     else cursor("../assets/freeDrawing/pencil.cur");
   } catch (e) {
     cursor(ARROW);
+  }
+}
+
+// Zoom utility functions
+function zoomBy(factor) {
+  const centerX = width / 2;
+  const centerY = height / 2;
+
+  // Get center position before zoom
+  const centerBeforeZoomX = (centerX - panX) / zoomLevel;
+  const centerBeforeZoomY = (centerY - panY) / zoomLevel;
+
+  // Apply zoom
+  zoomLevel = constrain(zoomLevel * factor, minZoom, maxZoom);
+
+  // Adjust pan to keep center position fixed
+  panX = centerX - centerBeforeZoomX * zoomLevel;
+  panY = centerY - centerBeforeZoomY * zoomLevel;
+
+  updateZoomDisplay();
+}
+
+function resetZoom() {
+  zoomLevel = 1.0;
+  panX = 0;
+  panY = 0;
+  updateZoomDisplay();
+}
+
+function updateZoomDisplay() {
+  if (zoomDisplay) {
+    zoomDisplay.textContent = `Zoom: ${Math.round(zoomLevel * 100)}%`;
   }
 }
 
